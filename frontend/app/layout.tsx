@@ -15,8 +15,20 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Runtime-configurable API base: set API_BASE (server env) on the host and the
+  // same built image points at any backend — no rebuild needed.
+  const runtimeApiBase = process.env.API_BASE || process.env.NEXT_PUBLIC_API_BASE || "";
   return (
     <html lang="en">
+      <head>
+        {runtimeApiBase ? (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.__API_BASE__=${JSON.stringify(runtimeApiBase)};`,
+            }}
+          />
+        ) : null}
+      </head>
       <body>
         <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
           <Link href="/" className="text-xl font-extrabold tracking-tight">

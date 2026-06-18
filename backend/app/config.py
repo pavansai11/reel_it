@@ -70,8 +70,32 @@ class Settings(BaseSettings):
     daily_spend_ceiling_usd: float = 0.0
     watermark_text: str = "ReelMagic"
 
-    # CORS
+    # CORS / cookies (cross-origin deploys: frontend and API on different hosts)
     frontend_origin: str = "http://localhost:3000"
+    # Extra comma-separated allowed origins, and an optional regex (e.g. to allow
+    # any *.onrender.com / *.vercel.app preview domain).
+    cors_extra_origins: str = ""
+    cors_origin_regex: str = ""
+    # Session cookie attributes. For a split-domain prod deploy over HTTPS set
+    # COOKIE_SAMESITE=none and COOKIE_SECURE=true so the cookie crosses origins.
+    cookie_samesite: str = "lax"  # lax | none | strict
+    cookie_secure: bool = False
+
+    @property
+    def cors_origins(self) -> list[str]:
+        base = [
+            self.frontend_origin,
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ]
+        extra = [o.strip() for o in self.cors_extra_origins.split(",") if o.strip()]
+        # de-dup, preserve order
+        seen, out = set(), []
+        for o in base + extra:
+            if o not in seen:
+                seen.add(o)
+                out.append(o)
+        return out
 
     @property
     def is_sqlite(self) -> bool:

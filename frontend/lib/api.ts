@@ -1,8 +1,22 @@
 // Typed API client. Every call sends the session cookie (credentials:include)
 // since the backend identifies anonymous sessions via an httponly cookie.
 
-export const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "") || "http://localhost:8000";
+// Resolution order: runtime-injected (window.__API_BASE__, set by the server
+// layout from the API_BASE env) -> build-time NEXT_PUBLIC_API_BASE -> localhost.
+declare global {
+  interface Window {
+    __API_BASE__?: string;
+  }
+}
+
+function resolveApiBase(): string {
+  if (typeof window !== "undefined" && window.__API_BASE__) {
+    return window.__API_BASE__.replace(/\/$/, "");
+  }
+  return (process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000").replace(/\/$/, "");
+}
+
+export const API_BASE = resolveApiBase();
 
 export type Vibe = "energetic" | "cinematic" | "aesthetic";
 

@@ -5,6 +5,7 @@ from fastapi import Request, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session as DbSession
 
+from ..config import settings
 from ..models import Session as SessionModel
 
 SESSION_COOKIE = "rm_session"
@@ -23,7 +24,8 @@ def get_or_create_session(request: Request, response: Response, db: DbSession) -
             sess.id,
             max_age=60 * 60 * 24 * 30,
             httponly=True,
-            samesite="lax",
+            samesite=settings.cookie_samesite,  # 'none' for cross-site prod
+            secure=settings.cookie_secure,  # required when samesite=none
         )
     return sess
 
