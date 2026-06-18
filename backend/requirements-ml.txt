@@ -1,0 +1,14 @@
+# OPTIONAL: GPU-quality scoring (spec stage 3). The pipeline runs without these
+# (it falls back to OpenCV heuristics + Haar-cascade faces). Install when you
+# want CLIP aesthetic/zero-shot tags and MediaPipe face/smile detection.
+#
+#   pip install -r requirements-ml.txt
+#
+# On CPU these are slower; on a serverless GPU burst they are fast. open_clip
+# pulls in torch (large), so this is a separate file to keep the base image lean.
+
+torch>=2.2
+open_clip_torch>=2.24
+mediapipe>=0.10
+# Optional speech transcription for talking clips (not needed for music montage):
+faster-whisper>=1.0

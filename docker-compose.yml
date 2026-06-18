@@ -1,0 +1,72 @@
+# Local/prod-ish stack: Redis + API + worker + frontend.
+# Web and worker share the storage/data volumes so locally-rendered reels are
+# servable by the API. In production, set STORAGE_BACKEND=r2 and drop the volumes.
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      ENV: production
+      REDIS_URL: redis://redis:6379/0
+      RUN_JOBS_INLINE: "false"
+      DATABASE_URL: sqlite:////app/data/reelmagic.db
+      STORAGE_BACKEND: local
+      STORAGE_LOCAL_DIR: /app/storage
+      STORAGE_PUBLIC_BASE_URL: http://localhost:8000/files
+      FRONTEND_ORIGIN: http://localhost:3000
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      SCORING_BACKEND: ${SCORING_BACKEND:-auto}
+      DAILY_SPEND_CEILING_USD: ${DAILY_SPEND_CEILING_USD:-0}
+    volumes:
+      - storage:/app/storage
+      - data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  worker:
+    build: ./backend
+    restart: unless-stopped
+    command: ["python", "worker.py"]
+    environment:
+      ENV: production
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: sqlite:////app/data/reelmagic.db
+      STORAGE_BACKEND: local
+      STORAGE_LOCAL_DIR: /app/storage
+      STORAGE_PUBLIC_BASE_URL: http://localhost:8000/files
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      SCORING_BACKEND: ${SCORING_BACKEND:-auto}
+      DAILY_SPEND_CEILING_USD: ${DAILY_SPEND_CEILING_USD:-0}
+    volumes:
+      - storage:/app/storage
+      - data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_BASE: http://localhost:8000
+    depends_on:
+      - backend
+
+volumes:
+  storage:
+  data:

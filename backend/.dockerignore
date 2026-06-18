@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+data/
+storage/
+sample_trip/
+*.db
+*.sqlite*
+assets/music/*.wav
+assets/music/*.mp3
+.env
+tests/
