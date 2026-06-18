@@ -1,5 +1,5 @@
 # ReelMagic developer commands.
-.PHONY: help setup music backend worker frontend test clean cleanup compose-up compose-down
+.PHONY: help setup music dev backend worker frontend test clean cleanup compose-up compose-down
 
 VENV := .venv
 PY := $(VENV)/bin/python
@@ -8,8 +8,9 @@ help:
 	@echo "ReelMagic — make targets:"
 	@echo "  setup        Create venv, install backend deps, build music + beat maps"
 	@echo "  music        (Re)generate bundled tracks + beat maps"
-	@echo "  backend      Run the API (uvicorn) on :8000"
-	@echo "  worker       Run an RQ worker (needs Redis)"
+	@echo "  dev          Run the API in INLINE mode (no Redis/worker needed) on :8000"
+	@echo "  backend      Run the API (uvicorn) on :8000 (queue mode — needs a worker)"
+	@echo "  worker       Run an RQ worker (needs Redis running)"
 	@echo "  frontend     Run the Next.js dev server on :3000"
 	@echo "  test         Run the backend test suite"
 	@echo "  cleanup      Purge media for jobs older than the TTL (48h)"
@@ -32,6 +33,10 @@ setup:
 
 music:
 	cd backend && ../$(PY) scripts/generate_music.py && ../$(PY) scripts/build_beatmaps.py
+
+# Simplest local run: renders inside the request, no Redis or worker needed.
+dev:
+	cd backend && RUN_JOBS_INLINE=true ../$(PY) -m uvicorn app.main:app --reload --port 8000
 
 backend:
 	cd backend && ../$(PY) -m uvicorn app.main:app --reload --port 8000
