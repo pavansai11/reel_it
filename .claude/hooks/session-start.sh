@@ -26,18 +26,16 @@ if ! command -v ffmpeg >/dev/null 2>&1; then
     echo "[reelmagic hook] WARN: could not apt-get ffmpeg; render/tests may fail"
 fi
 
-# 2. Python venv + backend deps (pip install benefits from container caching).
-if [ ! -d ".venv" ]; then
-  if command -v uv >/dev/null 2>&1; then
-    uv venv --python 3.11 .venv
-  else
-    python3 -m venv .venv
-  fi
+# 2. Python venv + backend deps. NOTE: `uv venv` creates a pip-less venv, so
+# install with `uv pip install --python .venv` rather than the venv's pip.
+if command -v uv >/dev/null 2>&1; then
+  [ -d ".venv" ] || uv venv --python 3.11 .venv
+  uv pip install --python .venv --quiet -r backend/requirements.txt
+else
+  [ -d ".venv" ] || python3 -m venv .venv
+  .venv/bin/python -m pip install --quiet --upgrade pip >/dev/null 2>&1 || true
+  .venv/bin/python -m pip install --quiet -r backend/requirements.txt
 fi
-# shellcheck disable=SC1091
-source .venv/bin/activate
-pip install --quiet --upgrade pip >/dev/null 2>&1 || true
-pip install --quiet -r backend/requirements.txt
 
 # 3. Bundled music + precomputed beat maps (deterministic; WAVs aren't committed).
 if [ -z "$(ls backend/assets/music/*.wav 2>/dev/null)" ]; then

@@ -3,7 +3,6 @@
 
 VENV := .venv
 PY := $(VENV)/bin/python
-PIP := $(VENV)/bin/pip
 
 help:
 	@echo "ReelMagic — make targets:"
@@ -18,10 +17,18 @@ help:
 	@echo "  clean        Remove venv, local db, storage, generated media"
 
 setup:
-	uv venv --python 3.11 $(VENV) 2>/dev/null || python3 -m venv $(VENV)
-	$(PIP) install -r backend/requirements.txt
+	@if command -v uv >/dev/null 2>&1; then \
+		echo "Using uv…"; \
+		uv venv --python 3.11 $(VENV); \
+		uv pip install --python $(VENV) -r backend/requirements.txt; \
+	else \
+		echo "Using python venv + pip…"; \
+		python3 -m venv $(VENV); \
+		$(PY) -m pip install --upgrade pip; \
+		$(PY) -m pip install -r backend/requirements.txt; \
+	fi
 	cd backend && ../$(PY) scripts/generate_music.py && ../$(PY) scripts/build_beatmaps.py
-	@echo "\nSetup done. Copy backend/.env.example -> backend/.env, then `make backend`."
+	@echo "\nSetup done. Copy backend/.env.example -> backend/.env, then 'make backend'."
 
 music:
 	cd backend && ../$(PY) scripts/generate_music.py && ../$(PY) scripts/build_beatmaps.py
